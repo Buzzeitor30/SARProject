@@ -483,8 +483,10 @@ class SAR_Project:
         #Estos dos bucles son necesarios porque puede que no se haya añadido una lista entera
         while i < len(p1):
             plres.append(p1[i])
+            i += 1
         while j < len(p2):
-            plres.append(p2[i])
+            plres.append(p2[j])
+            j += 1
         return plres
 
     def minus_posting(self, p1, p2):
