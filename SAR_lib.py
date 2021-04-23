@@ -302,7 +302,48 @@ class SAR_Project:
         ########################################
         ## COMPLETAR PARA TODAS LAS VERSIONES ##
         ########################################
-
+        newquery = re.split('\W+', query)
+        #Primer operando
+        postin1 = []
+        #¿Hemos encontrado un AND?
+        vary = false
+        #¿Hemos encontrado un OR?
+        varo = false
+        #¿Hemos encontrado un NOT?
+        varn = false
+        #Vamos recorriendo todo lo que hay en consulta
+        while newquery != []:
+            #Si nos encontramos con un NOT,AND u OR activamos las codiciones
+            if newquery[0]=="NOT":
+                varn = True
+            elif newquery[0]=="AND":
+                vary = True
+            elif newquery[0]=="OR":
+                varo = True
+            #Si es un término
+            else:
+                #Recuperamos el término
+                postin2 = self.get_posting(newquery[0])
+                #Si hemos encontrado un NOT previamente,negamos
+                if varn:
+                    postin2 = self.reverse_posting(postin2)
+                #Si hemos encontrado un OR, hacemos el OR con el término previo y el actual
+                if varo:
+                    postin1 = self.or_posting(postin1,postin2)
+                #Si hemos encontrado un AND, hacemos el AND con el término previo y el actual
+                if vary:
+                    postin1 = self.and_posting(postin1,postin2)
+                #Si no tenemos ninguna de estas, simplemente estamos en el primer término y postin1=postin2
+                if not(varn) and not(varo) and not(vary):
+                    postin1 = postin2
+                #Ponemos todo lo visto a False
+                varo = False
+                varn = False
+                vary = False
+            #Expulsamos el elemento de la cola
+            newquery.pop(0)
+        #Devolvemos el resultado
+        return postin1
  
 
 
