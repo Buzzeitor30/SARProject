@@ -200,8 +200,8 @@ class SAR_Project:
                 #Si el término no se encuentra en el diccionario, creamos una lista vacía
                 if term not in self.index:
                     self.index[term] = []
-                #Luego hacemos append del docID donde se encuentra
-                self.index[term].append(docID)
+                #Luego hacemos append de la noticia donde se encuentra
+                self.index[term].append(len(self.news))
 
 
     def tokenize(self, text):
@@ -295,7 +295,7 @@ class SAR_Project:
         return: posting list con el resultado de la query
 
         """
-
+        
         if query is None or len(query) == 0:
             return []
 
@@ -318,7 +318,7 @@ class SAR_Project:
 
 
         param:  "term": termino del que se debe recuperar la posting list.
-                "field": campo sobre el que se debe recuperar la posting list, solo necesario se se hace la ampliacion de multiples indices
+                "field": campo sobre el que se debe recuperar la posting list, solo necesario si se hace la ampliacion de multiples indices
 
         return: posting list
 
@@ -327,6 +327,10 @@ class SAR_Project:
         ########################################
         ## COMPLETAR PARA TODAS LAS VERSIONES ##
         ########################################
+
+        plist = self.index[term] #Devolvemos esta posting list
+        print(plist)
+        return plist
 
 
 
@@ -402,13 +406,26 @@ class SAR_Project:
         return: posting list con todos los newid exceptos los contenidos en p
 
         """
-        
-        pass
-        ########################################
-        ## COMPLETAR PARA TODAS LAS VERSIONES ##
-        ########################################
-
-
+        #Recuperamos el nº total de noticias que hay
+        allnews = [i+1 for i in range(len(self.news))]
+        #Posting list resultante 
+        pres = []
+        i = 0
+        j = 0
+        while i < len(p) and j < len(allnews):
+            #Si son el mismo término,incrementamos todo en 1 y no añadimos nada al resultado
+            if p[i] == allnews[j]:
+                i += 1
+                j += 1
+            #Caso alternativo: allnews[j] < p[i], entonces añadimos el término allnews[j]
+            else:
+                pres.append(allnews[j])
+                j+=1
+            #No se puede dar el caso de que p[i] > allnews[j]
+        #Si quedan términos sin visitar
+        while j < len(allnews):
+            pres.append(allnews[j])
+        return pres
 
     def and_posting(self, p1, p2):
         """
@@ -502,13 +519,12 @@ class SAR_Project:
         return: posting list con los newid incluidos de p1 y no en p2
 
         """
-
-        
-        pass
-        ########################################################
-        ## COMPLETAR PARA TODAS LAS VERSIONES SI ES NECESARIO ##
-        ########################################################
-
+        #A EXCEPT B se traduce como A AND NOT B, por lo tanto es tan sencillo como devolver 
+        p2 = self.reverse_posting(p2)
+        #A AND NOT B lo hacemos
+        pres = self.and_posting(p1,p2)
+        #Devolvemos el la posting list de resultado
+        return pres
 
 
 
