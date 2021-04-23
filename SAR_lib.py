@@ -186,6 +186,7 @@ class SAR_Project:
         self.docs[len(self.docs) + 1] = filename
         #ID del último docID
         docID = len(self.docs)
+        cont = 0
         for i in range(len(jlist)):
             #Insertanos la noticia con un clave secuencial que depende de la longitud de la lista 
             # y el valor es una tupla (docID,posición)
@@ -201,7 +202,9 @@ class SAR_Project:
                 if term not in self.index:
                     self.index[term] = []
                 #Luego hacemos append de la noticia donde se encuentra
-                self.index[term].append(len(self.news))
+                if len(self.news) not in self.index[term]:
+                    self.index[term].append(len(self.news))
+
 
 
     def tokenize(self, text):
@@ -306,11 +309,11 @@ class SAR_Project:
         #Primer operando
         postin1 = []
         #¿Hemos encontrado un AND?
-        vary = false
+        vary = False
         #¿Hemos encontrado un OR?
-        varo = false
+        varo = False
         #¿Hemos encontrado un NOT?
-        varn = false
+        varn = False
         #Vamos recorriendo todo lo que hay en consulta
         while newquery != []:
             #Si nos encontramos con un NOT,AND u OR activamos las codiciones
@@ -324,6 +327,7 @@ class SAR_Project:
             else:
                 #Recuperamos el término
                 postin2 = self.get_posting(newquery[0])
+                print(postin2)
                 #Si hemos encontrado un NOT previamente,negamos
                 if varn:
                     postin2 = self.reverse_posting(postin2)
@@ -343,7 +347,7 @@ class SAR_Project:
             #Expulsamos el elemento de la cola
             newquery.pop(0)
         #Devolvemos el resultado
-        return postin1
+        return len(postin1)
  
 
 
@@ -370,7 +374,6 @@ class SAR_Project:
         ########################################
 
         plist = self.index[term] #Devolvemos esta posting list
-        print(plist)
         return plist
 
 
