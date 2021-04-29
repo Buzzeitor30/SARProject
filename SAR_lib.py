@@ -186,7 +186,6 @@ class SAR_Project:
         self.docs[len(self.docs) + 1] = filename
         #ID del último docID
         docID = len(self.docs)
-        cont = 0
         for i in range(len(jlist)):
             #Insertanos la noticia con un clave secuencial que depende de la longitud de la lista 
             # y el valor es una tupla (docID,posición)
@@ -198,11 +197,11 @@ class SAR_Project:
             content = self.tokenize(new['article'])
             #Recorremos los índices 
             for term in content:
-                #Si el término no se encuentra en el diccionario, creamos una lista vacía
+                #Si el término no se encuentra en el diccionario, creamos la posting list
                 if term not in self.index:
-                    self.index[term] = []
-                #Luego hacemos append de la noticia donde se encuentra
-                if len(self.news) not in self.index[term]:
+                    self.index[term] = [len(self.news)]
+                #Si la ultima noticia añadida es diferente a la actual, añadimos
+                elif self.index[term][-1] != len(self.news):
                     self.index[term].append(len(self.news))
 
 
@@ -305,49 +304,43 @@ class SAR_Project:
         ########################################
         ## COMPLETAR PARA TODAS LAS VERSIONES ##
         ########################################
-        newquery = re.split('\W+', query)
-        #Primer operando
-        postin1 = []
-        #¿Hemos encontrado un AND?
-        vary = False
-        #¿Hemos encontrado un OR?
-        varo = False
-        #¿Hemos encontrado un NOT?
-        varn = False
-        #Vamos recorriendo todo lo que hay en consulta
+        #Le damos la vuelta porque vamos a tratar la lista como una pila
+        newquery = re.split('\W+', query)[::-1]
+        #Pila donde almacenamos los operandos que vamos viendo
+        pila = []
+        #Hay que hacer todos los términos de la consulta
         while newquery != []:
-            #Si nos encontramos con un NOT,AND u OR activamos las codiciones
-            if newquery[0]=="NOT":
-                varn = True
-            elif newquery[0]=="AND":
-                vary = True
-            elif newquery[0]=="OR":
-                varo = True
-            #Si es un término
+            #Obtenemos el contenido, se encuentra en lo alto de la peli
+            var = newquery.pop()
+            #Hemos encontrado un término
+            if var not in ['AND','OR','NOT']:
+                #Si no hemos visto ningún operando => primer término
+                if pila == []:
+                    first = self.get_posting(var)
+                #Hemos encontrado operandos previamente
+                else:
+                    #Obtenemos el término
+                    second = self.get_posting(var)
+                    #Vamos haciendo operaciones
+                    while pila != []:
+                        #¿Cual es el ultimo operando?
+                        op = pila.pop()
+                        #Es un NOT, reverse a la segunda posting list
+                        if op == 'NOT':
+                            second = self.reverse_posting(second)
+                        #Es  un AND, hacemos and_posting
+                        elif op == 'AND':
+                            second = self.and_posting(first,second)
+                        #Es un OR, hacemos or_posting
+                        else:
+                            second = self.or_posting(first,second)
+                    #Guardamos el resultado para más operaciones OwO
+                    first = second
+            #Se trata de un operando, lo añadimos a la pila
             else:
-                #Recuperamos el término
-                postin2 = self.get_posting(newquery[0])
-                print(postin2)
-                #Si hemos encontrado un NOT previamente,negamos
-                if varn:
-                    postin2 = self.reverse_posting(postin2)
-                #Si hemos encontrado un OR, hacemos el OR con el término previo y el actual
-                if varo:
-                    postin1 = self.or_posting(postin1,postin2)
-                #Si hemos encontrado un AND, hacemos el AND con el término previo y el actual
-                if vary:
-                    postin1 = self.and_posting(postin1,postin2)
-                #Si no tenemos ninguna de estas, simplemente estamos en el primer término y postin1=postin2
-                if not(varn) and not(varo) and not(vary):
-                    postin1 = postin2
-                #Ponemos todo lo visto a False
-                varo = False
-                varn = False
-                vary = False
-            #Expulsamos el elemento de la cola
-            newquery.pop(0)
+                pila.append(var)
         #Devolvemos el resultado
-        return len(postin1)
+        return first
  
 
 
@@ -368,12 +361,7 @@ class SAR_Project:
         return: posting list
 
         """
-        pass
-        ########################################
-        ## COMPLETAR PARA TODAS LAS VERSIONES ##
-        ########################################
-
-        plist = self.index[term] #Devolvemos esta posting list
+        plist = self.index.get(term,[]) #Devolvemos esta posting list
         return plist
 
 
@@ -462,13 +450,14 @@ class SAR_Project:
                 i += 1
                 j += 1
             #Caso alternativo: allnews[j] < p[i], entonces añadimos el término allnews[j]
-            else:
+            elif allnews[j] < p[i]:
                 pres.append(allnews[j])
                 j+=1
             #No se puede dar el caso de que p[i] > allnews[j]
         #Si quedan términos sin visitar
         while j < len(allnews):
             pres.append(allnews[j])
+            j += 1
         return pres
 
     def and_posting(self, p1, p2):
@@ -493,7 +482,7 @@ class SAR_Project:
         while i < len(p1) and j < len(p2):
             #Si los punteros apuntan al mismo nº, lo añadimos a la posting list
             # e incrementamos en 1 los punteros
-            if p1[i] == p2[i]:
+            if p1[i] == p2[j]:
                 plres.append(p1[i])
                 i += 1
                 j += 1
@@ -613,7 +602,8 @@ class SAR_Project:
         """
         result = self.solve_query(query)
         if self.use_ranking:
-            result = self.rank_result(result, query)   
+            result = self.rank_result(result, query)
+        return result   
 
         ########################################
         ## COMPLETAR PARA TODAS LAS VERSIONES ##

@@ -59,7 +59,7 @@ if __name__ == "__main__":
     searcher.set_showall(args.all)
     searcher.set_snippet(args.snippet)
 
-
+    print(args.count)
     # se debe contar o mostrar resultados?
     if args.count is True:
         fnc = searcher.solve_and_count
