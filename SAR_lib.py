@@ -262,18 +262,11 @@ class SAR_Project:
         
         """
         #TODO: Mirar ayuda.pdf para rellenar todo ^^ y dejarlo bonito este print que es muy chapuza
-        print("Número de días del corpus \t",len(self.docs))
-        print("Número de noticias \t",len(self.news))
-        print("Número de términos en el cuerpo de la noticia(article)\t",len(self.index))
-
-        
-
-
-
-
-
-
-
+        print("="*40)
+        print("Number of indexed days: ",len(self.docs))
+        print("-"*40)
+        print("Number of indexed news ",len(self.news))
+        print("="*40)
 
     ###################################
     ###                             ###
@@ -342,8 +335,6 @@ class SAR_Project:
         #Devolvemos el resultado
         return first
  
-
-
     def get_posting(self, term, field='article'):
         """
         NECESARIO PARA TODAS LAS VERSIONES
@@ -364,8 +355,6 @@ class SAR_Project:
         plist = self.index.get(term,[]) #Devolvemos esta posting list
         return plist
 
-
-
     def get_positionals(self, terms, field='article'):
         """
         NECESARIO PARA LA AMPLIACION DE POSICIONALES
@@ -382,7 +371,6 @@ class SAR_Project:
         ########################################################
         ## COMPLETAR PARA FUNCIONALIDAD EXTRA DE POSICIONALES ##
         ########################################################
-
 
     def get_stemming(self, term, field='article'):
         """
@@ -403,7 +391,6 @@ class SAR_Project:
         ## COMPLETAR PARA FUNCIONALIDAD EXTRA DE STEMMING ##
         ####################################################
 
-
     def get_permuterm(self, term, field='article'):
         """
         NECESARIO PARA LA AMPLIACION DE PERMUTERM
@@ -420,9 +407,6 @@ class SAR_Project:
         ##################################################
         ## COMPLETAR PARA FUNCIONALIDAD EXTRA PERMUTERM ##
         ##################################################
-
-
-
 
     def reverse_posting(self, p):
         """
@@ -496,7 +480,6 @@ class SAR_Project:
                 j+=1
         #Devolvemos la posting list resultante
         return plres
-
 
     def or_posting(self, p1, p2):
         """
@@ -626,7 +609,7 @@ class SAR_Project:
 
         """
 
-        pass
+        return []
         
         ###################################################
         ## COMPLETAR PARA FUNCIONALIDAD EXTRA DE RANKING ##
