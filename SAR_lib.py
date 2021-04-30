@@ -26,7 +26,7 @@ class SAR_Project:
     # numero maximo de documento a mostrar cuando self.show_all es False
     SHOW_MAX = 10
 
-
+ 
     def __init__(self):
         """
         Constructor de la classe SAR_Indexer.
