@@ -194,15 +194,18 @@ class SAR_Project:
             #Noticia en formato de dict.
             new = jlist[i]
             #Articulo tokenizado y separado por espacios
-            content = self.tokenize(new['article'])
-            #Recorremos los índices 
-            for term in content:
-                #Si el término no se encuentra en el diccionario, creamos la posting list
-                if term not in self.index:
-                    self.index[term] = [len(self.news)]
-                #Si la ultima noticia añadida es diferente a la actual, añadimos
-                elif self.index[term][-1] != len(self.news):
-                    self.index[term].append(len(self.news))
+            #Recorremos los índices
+            for f in fields:
+                if f[1]: content = self.tokeize(new[f[0]])
+                elif: content = new[f[0]] #date no se tokeniza
+                
+                for term in content:
+                    #Si el término no se encuentra en el diccionario, creamos la posting list
+                    if term not in self.index:
+                        self.index[term] = [len(self.news)]
+                    #Si la ultima noticia añadida es diferente a la actual, añadimos
+                    elif self.index[term][-1] != len(self.news):
+                        self.index[term].append(len(self.news))
 
 
 
