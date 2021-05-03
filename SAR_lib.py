@@ -169,7 +169,6 @@ class SAR_Project:
                 Una vez parseado con json.load tendremos una lista de diccionarios, cada diccionario se corresponde a una noticia
 
         """
-
         with open(filename) as fh:
             jlist = json.load(fh)
         #
@@ -293,7 +292,6 @@ class SAR_Project:
         
         if query is None or len(query) == 0:
             return []
-
         ########################################
         ## COMPLETAR PARA TODAS LAS VERSIONES ##
         ########################################
@@ -404,6 +402,7 @@ class SAR_Project:
 
         """
 
+
         ##################################################
         ## COMPLETAR PARA FUNCIONALIDAD EXTRA PERMUTERM ##
         ##################################################
@@ -411,14 +410,9 @@ class SAR_Project:
     def reverse_posting(self, p):
         """
         NECESARIO PARA TODAS LAS VERSIONES
-
         Devuelve una posting list con todas las noticias excepto las contenidas en p.
         Util para resolver las queries con NOT.
-
-
         param:  "p": posting list
-
-
         return: posting list con todos los newid exceptos los contenidos en p
 
         """
@@ -583,17 +577,89 @@ class SAR_Project:
         return: el numero de noticias recuperadas, para la opcion -T
         
         """
+        #Tokenizer 2
+        tok = re.compile(r'AND|OR|NOT')
+        #Posting list resultante
         result = self.solve_query(query)
-        if self.use_ranking:
-            result = self.rank_result(result, query)
-        return result   
+        #Arreglamos el string
+        aux = "'" + query + "'"
+        #Imprimimos la query
+        print("Query:",aux)
+        #Imprimimos longitud posting list
+        number = len(result)
+        print("Number of results:",number)
+        #Asignamos score predeterminada
+        score = 0
+        #Recorremos cada documento
+        for i in range(number):
+            #Imprimimos el nº de resultado
+            print("#" + str(i+1))
+            #Si usamos score, actualizamos
+            if self.use_ranking:
+                score = self.rank_result(result, query)
+            print("Score: ",score)
+            #Sacamos cual es la noticia
+            noticia = result[i]
+            #Imprimimos el identificador de la noticia
+            print("New ID: ", noticia)
+            #Sacamos el documento y posición en la que se encuentra la noticia
+            (docID,pos) = self.news[noticia]
+            #Sacamos el fichero
+            filename = self.docs[docID]
+            #Abrimos el documento
+            with open(filename) as fh:
+                jlist = json.load(fh)
+            #Guardamos la noticia en el documento en una variable
+            new = jlist[pos]
+            #Fecha
+            print("Date: ",new['date'])
+            print("Title: ",new['title'])
+            print("Keywords: ",new['keywords'])
+            if self.show_snippet:
+                snippet = self.get_summary(self.tokenize(new['article']),tok.sub('',query).split())
+                print(snippet)
+        
+        return number  
 
-        ########################################
-        ## COMPLETAR PARA TODAS LAS VERSIONES ##
-        ########################################
 
-
-
+    def get_summary(self,article,terms):
+        #Encontramos las primeras apariciones de los articulos 
+        indexes = [(x,article.index(x)) for x in terms if x in article]
+        #Ordenamos por orden de aparición
+        indexes = sorted(indexes,key = lambda tup: tup[1])
+        #Snippet resultado
+        snippet = ' '
+        seen = False
+        #Recorremos todos los índices excepto el último
+        for i in range(len(indexes) - 1):
+            #Índice del primer término
+            first = indexes[i]
+            #índice del siguiente término
+            last = indexes[i+1]
+            #Si estan a menos de 10 palabras entre ambos, pillamos la frase hasta ahí
+            if last[1] - first[1] < 10:
+                aux = ' '.join(article[first[1]:last[1] + len(last[0])]) + ' '
+                #Hay dos palabras juntas 
+                seen = True
+            #La palabra anterior ya está añadida y no podemos añadir la siguiente
+            elif seen:
+                #Solo ponemos ...
+                aux = '...'
+                #No las hay
+                seen = False
+            #Simplemente añadimos 3 palabras a la izquierda y tres a la derecha 
+            else:
+                j = 3 if first[1] > 3 else 0
+                z = 3 if first[1] < len(indexes) else len(indexes)
+                aux = ' '.join(article[first[1] - j: first[1] + z]) + '...'
+                print(aux)
+            snippet += aux
+        
+        if not seen:
+            aux = indexes[-1]
+            snippet += ' '.join(article[aux[1]: aux[1] + 3])
+        return snippet
+        
 
     def rank_result(self, result, query):
         """
