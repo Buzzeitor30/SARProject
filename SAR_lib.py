@@ -193,20 +193,23 @@ class SAR_Project:
             self.news[len(self.news) + 1] = (docID,i)
             #Noticia en formato de dict.
             new = jlist[i]
-            #Articulo tokenizado y separado por espacios
-            #Recorremos los índices
-            for f in fields:
-                if f[1]: content = self.tokeize(new[f[0]])
-                elif: content = new[f[0]] #date no se tokeniza
-                
-                for term in content:
-                    #Si el término no se encuentra en el diccionario, creamos la posting list
-                    if term not in self.index:
-                        self.index[term] = [len(self.news)]
-                    #Si la ultima noticia añadida es diferente a la actual, añadimos
-                    elif self.index[term][-1] != len(self.news):
-                        self.index[term].append(len(self.news))
 
+            #Recorremos los campos que tienen tuplas (campo, bool)
+            for f in self.fields:
+                if f[1]: content = self.tokenize(new[f[0]]) #Articulo tokenizado y separado por espacios
+                else: content = [new[f[0]]] #date no se tokeniza
+
+                for term in content: #recorremos los términos del contenido
+                    aux = self.index.get(f[0], {})
+                    
+                    #Si el término no se encuentra en el diccionario, creamos la posting list para dicho campo
+                    if term not in aux:
+                        aux[term] = [len(self.news)]
+                    #Si la ultima noticia añadida es diferente a la actual, añadimos
+                    elif aux[term][-1] != len(self.news):
+                        aux[term].append(len(self.news))
+                    
+                    self.index[f[0]] = aux
 
 
     def tokenize(self, text):
@@ -301,7 +304,7 @@ class SAR_Project:
         ## COMPLETAR PARA TODAS LAS VERSIONES ##
         ########################################
         #Le damos la vuelta porque vamos a tratar la lista como una pila
-        newquery = re.split('\W+', query)[::-1]
+        newquery = re.split(' ', query)[::-1]
         #Pila donde almacenamos los operandos que vamos viendo
         pila = []
         #Hay que hacer todos los términos de la consulta
@@ -312,11 +315,23 @@ class SAR_Project:
             if var not in ['AND','OR','NOT']:
                 #Si no hemos visto ningún operando => primer término
                 if pila == []:
-                    first = self.get_posting(var)
+                    if ':' in var: #comprobamos si es de un campo específico
+                        j = var.rfind(':') #obtenemos la posición de :
+                        campo = var[:j] #separamos el campo
+                        termino = var[j+1:] #separamos el término
+                        first = self.get_posting(termino, campo)
+
+                    else: first = self.get_posting(var)
                 #Hemos encontrado operandos previamente
                 else:
-                    #Obtenemos el término
-                    second = self.get_posting(var)
+                    if ':' in var: #comprobamos si es de un campo específico
+                        j = var.rfind(':') #obtenemos la posición de :
+                        campo = var[:j] #separamos el campo
+                        termino = var[j+1:] #separamos el término
+                        second = self.get_posting(termino, campo)
+
+                    else: second = self.get_posting(var)
+
                     #Vamos haciendo operaciones
                     while pila != []:
                         #¿Cual es el ultimo operando?
@@ -336,6 +351,7 @@ class SAR_Project:
             else:
                 pila.append(var)
         #Devolvemos el resultado
+        #print(first)
         return first
  
     def get_posting(self, term, field='article'):
@@ -355,8 +371,12 @@ class SAR_Project:
         return: posting list
 
         """
-        plist = self.index.get(term,[]) #Devolvemos esta posting list
+        #print('termino: '+term + ', campo: ' + field)
+
+        flist = self.index.get(field,{}) #Sacamos el diccionario de campo 'field'
+        plist = flist.get(term,[]) #Devolvemos la posting list del término dentro del campo
         return plist
+
 
     def get_positionals(self, terms, field='article'):
         """
