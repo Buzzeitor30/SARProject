@@ -148,7 +148,6 @@ class SAR_Project:
                 if filename.endswith('.json'):
                     fullname = os.path.join(dir, filename)
                     self.index_file(fullname)
-
         ##########################################
         ## COMPLETAR PARA FUNCIONALIDADES EXTRA ##
         ##########################################
@@ -192,24 +191,29 @@ class SAR_Project:
             self.news[len(self.news) + 1] = (docID,i)
             #Noticia en formato de dict.
             new = jlist[i]
+            self.process_field(new)
 
-            #Recorremos los campos que tienen tuplas (campo, bool)
-            for f in self.fields:
-                if f[1]: content = self.tokenize(new[f[0]]) #Articulo tokenizado y separado por espacios
-                else: content = [new[f[0]]] #date no se tokeniza
 
-                for term in content: #recorremos los términos del contenido
-                    aux = self.index.get(f[0], {})
-                    
-                    #Si el término no se encuentra en el diccionario, creamos la posting list para dicho campo
-                    if term not in aux:
-                        aux[term] = [len(self.news)]
-                    #Si la ultima noticia añadida es diferente a la actual, añadimos
-                    elif aux[term][-1] != len(self.news):
-                        aux[term].append(len(self.news))
-                    
-                    self.index[f[0]] = aux
+    def process_field(self,new):
+        """
+        Dado una noticia, se encarga de añadir los términos a sus correspondientes campos
+        param:
+        -new: es la noticia en cuestión que pasamos como diccionario
+        """
+        #Recorremos los campos que tienen tuplas (campo, bool)
+        for f in self.fields:
+            if f[1]: content = self.tokenize(new[f[0]]) #Articulo tokenizado y separado por espacios
+            else: content = [new[f[0]]] #date no se tokeniza
 
+            for term in content: #recorremos los términos del contenido
+                aux = self.index.get(f[0], {})
+                #Si el término no se encuentra en el diccionario, creamos la posting list para dicho campo
+                if term not in aux:
+                    aux[term] = [len(self.news)]
+                #Si la ultima noticia añadida es diferente a la actual, añadimos
+                elif aux[term][-1] != len(self.news):
+                    aux[term].append(len(self.news)) 
+                self.index[f[0]] = aux
 
     def tokenize(self, text):
         """
@@ -646,12 +650,23 @@ class SAR_Project:
 
 
     def get_summary(self,article,terms):
+        """
+        Muestra un snippet de una articulo de acuerdo a unos términos que aparecen en este
+        Consideraciones: Si dos términos se encuentran muy juntos, los muestra en una frase, si hay distancia entre
+        varios términos usa ... para separarlos
+        param:
+        -article: El articulo en cuestión
+        -terms: Lista con los términos
+        return:
+        El fragmento de texto en cuestión
+        """
         #Encontramos las primeras apariciones de los articulos 
         indexes = [(x,article.index(x)) for x in terms if x in article]
         #Ordenamos por orden de aparición
         indexes = sorted(indexes,key = lambda tup: tup[1])
         #Snippet resultado
-        snippet = ' '
+        snippet = ''
+        #Variable booleana, explicada más abajo
         seen = False
         #Recorremos todos los índices excepto el último
         for i in range(len(indexes) - 1):
@@ -666,20 +681,25 @@ class SAR_Project:
                 seen = True
             #La palabra anterior ya está añadida y no podemos añadir la siguiente
             elif seen:
-                #Solo ponemos ...
+                #Solo ponemos '...'
                 aux = '...'
                 #No las hay
                 seen = False
             #Simplemente añadimos 3 palabras a la izquierda y tres a la derecha 
             else:
+                #Comprobamos si estamos al principio del texto
                 j = 3 if first[1] > 3 else 0
+                #Comprobamos si estamos al final del texto
                 z = 3 if first[1] < len(indexes) else len(indexes)
+                #snippet+'...'
                 aux = ' '.join(article[first[1] - j: first[1] + z]) + '...'
-                print(aux)
+            #Añadimos a resultado
             snippet += aux
-        
+        #El último snippet si no esta en la misma frase que con el penúltimo, repetimos
         if not seen:
+            #Es el ultimo
             aux = indexes[-1]
+            #Añadimos
             snippet += ' '.join(article[aux[1]: aux[1] + 3])
         return snippet
         
