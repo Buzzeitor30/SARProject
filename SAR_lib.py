@@ -148,7 +148,6 @@ class SAR_Project:
                 if filename.endswith('.json'):
                     fullname = os.path.join(dir, filename)
                     self.index_file(fullname)
-
         ##########################################
         ## COMPLETAR PARA FUNCIONALIDADES EXTRA ##
         ##########################################
@@ -202,7 +201,6 @@ class SAR_Project:
                 #Si la ultima noticia añadida es diferente a la actual, añadimos
                 elif self.index[term][-1] != len(self.news):
                     self.index[term].append(len(self.news))
-
 
 
     def tokenize(self, text):
@@ -350,6 +348,7 @@ class SAR_Project:
         return: posting list
 
         """
+        
         plist = self.index.get(term,[]) #Devolvemos esta posting list
         return plist
 
