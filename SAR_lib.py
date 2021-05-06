@@ -463,10 +463,16 @@ class SAR_Project:
         return: posting list
 
         """
-        #print('termino: '+term + ', campo: ' + field)
-
-        flist = self.index.get(field,{}) #Sacamos el diccionario de campo 'field'
-        plist = flist.get(term,[]) #Devolvemos la posting list del término dentro del campo
+        #La opción de activar el stemming está activa:
+        if self.stemming:
+            plist = self.get_stemming(term,field) #Devolvemos la posting list del término dentro del campo
+        #Solo la opción del multifield está activada
+        elif self.multifield:
+            flist = self.index.get(field,{}) #Sacamos el diccionario de campo 'field'
+            plist = flist.get(term,[]) #Devolvemos la posting list del término dentro del campo
+        #No hay ninguna funcionalidad extra añadida ;)
+        else: 
+            plist = self.index.get(term,[])
         return plist
 
 
@@ -499,12 +505,32 @@ class SAR_Project:
         return: posting list
 
         """
-        
+        #Sacamos el stem del término
         stem = self.stemmer.stem(term)
+        #Si tenemos multifield activado, le asignamos del campo correspondiente
+        #en otro caso le asignamos la entrada del sindex
+        aux = self.sindex[field].get(stem,[]) if self.multifield else self.sindex.get(stem,[])
 
-        ####################################################
-        ## COMPLETAR PARA FUNCIONALIDAD EXTRA DE STEMMING ##
-        ####################################################
+        #Si tenemos multifield activado, le asignamos del campo correspondiente
+        # en ontro caso le asignamos la entrada del index
+        aux2 = self.index[field] if self.multifield else self.index
+
+        #Si aux está vacía, devolvemos la lista vacía que está en aux
+        if len(aux) == 0:
+            return aux
+        #Si aux tiene un solo término, devolvemos la lista posicional correspondiente
+        elif len(aux) == 1:
+            #No hace falta comprobar si el término está o no en aux2, si esta en sindex => está en index
+            return aux2[aux[0]]
+        #Asignamos a res la lista del primer término 
+        res = aux2[aux[0]]
+        #Recorremos la lista y vamos aplicando la operación OR
+        for i in range(1,len(aux)):
+            #Posting list del siguiente término
+            var = aux2[aux[i]]
+            res = self.or_posting(res,var)
+        #Devolvemos el resultado
+        return res
 
     def get_permuterm(self, term, field='article'):
         """
