@@ -143,11 +143,15 @@ class SAR_Project:
         self.stemming = args['stem']
         self.permuterm = args['permuterm']
 
+        self.set_stemming(self.stemming)
         for dir, subdirs, files in os.walk(root):
             for filename in files:
                 if filename.endswith('.json'):
                     fullname = os.path.join(dir, filename)
                     self.index_file(fullname)
+
+        if self.use_stemming:
+            self.make_stemming()
         ##########################################
         ## COMPLETAR PARA FUNCIONALIDADES EXTRA ##
         ##########################################
@@ -191,12 +195,32 @@ class SAR_Project:
             self.news[len(self.news) + 1] = (docID,i)
             #Noticia en formato de dict.
             new = jlist[i]
-            self.process_field(new)
+            if self.multifield:
+                self.process_field(new)
+            else:
+                self.process(new)
 
+
+
+    def process(self,new):
+        """
+        Dado una noticia, se encarga de añadir los términos al diccionario, para la versión no multifield
+        param:
+        -new: es la noticia en cuestión que pasamos como diccionario
+        """
+        #Tokenizamos el article
+        content = self.tokenize(new['article'])
+        for term in content: #recorremos los términos del contenido
+                #Si el término no se encuentra en el diccionario, creamos la posting list para dicho campo
+                if term not in self.index:
+                    self.index[term] = [len(self.news)]
+                #Si la ultima noticia añadida es diferente a la actual, añadimos
+                elif self.index[term][-1] != len(self.news):
+                    self.index[term].append(len(self.news))
 
     def process_field(self,new):
         """
-        Dado una noticia, se encarga de añadir los términos a sus correspondientes campos
+        Dado una noticia, se encarga de añadir los términos a sus correspondientes campos, para la versión multifield
         param:
         -new: es la noticia en cuestión que pasamos como diccionario
         """
@@ -204,7 +228,6 @@ class SAR_Project:
         for f in self.fields:
             if f[1]: content = self.tokenize(new[f[0]]) #Articulo tokenizado y separado por espacios
             else: content = [new[f[0]]] #date no se tokeniza
-
             for term in content: #recorremos los términos del contenido
                 aux = self.index.get(f[0], {})
                 #Si el término no se encuentra en el diccionario, creamos la posting list para dicho campo
@@ -212,7 +235,7 @@ class SAR_Project:
                     aux[term] = [len(self.news)]
                 #Si la ultima noticia añadida es diferente a la actual, añadimos
                 elif aux[term][-1] != len(self.news):
-                    aux[term].append(len(self.news)) 
+                    aux[term].append(len(self.news))
                 self.index[f[0]] = aux
 
     def tokenize(self, text):
@@ -240,13 +263,43 @@ class SAR_Project:
         self.stemmer.stem(token) devuelve el stem del token
 
         """
+        #Depende de si tenemos multifield
+        if self.multifield:
+            self.process_stemming_multifield()
+        #O no tenemos multifield
+        else:
+            self.process_stemming()
         
-        pass
-        ####################################################
-        ## COMPLETAR PARA FUNCIONALIDAD EXTRA DE STEMMING ##
-        ####################################################
-
-
+    def process_stemming_multifield(self):
+        """
+        Hace stemming en cada término de cada field y lo introduce en self.sindex[field]
+        """
+        #Obtenemos clave y valor
+        for k,v in self.index.items():
+            #Si no se había creado el campo previamente
+            self.sindex[k] = {}
+            #Recorremos los valores
+            for term in v:
+                #Obtenemos el stem de cada término
+                stem = self.stemmer.stem(term)
+                #Si el stem no se encuentra en la entrada del field, creamos una lista de 1 elemento
+                if stem not in self.sindex[k]:
+                    self.sindex[k][stem] = [term]
+                #Si el término no está en la entrada del field del stem correspondiente
+                elif term not in self.sindex[k][stem]:
+                    self.sindex[k][stem].append(term)
+    
+    def process_stemming(self):
+        """
+        Hace stemming en cada término, version sin multifield
+        """
+        for term in self.index:
+            #Sacamos el stem
+            stem = self.stemmer.stem(term)
+            if stem not in self.sindex:
+                self.sindex[stem] = [term]
+            elif term not in self.sindex[stem]:
+                self.sindex[stem].append(term)
     
     def make_permuterm(self):
         """
@@ -275,8 +328,45 @@ class SAR_Project:
         print("Number of indexed days: ",len(self.docs))
         print("-"*40)
         print("Number of indexed news ",len(self.news))
+        if self.multifield:
+            print("-"*40)
+            print("TOKENS:")
+            print("# of tokens in 'title':",len(self.index['title']))
+            print("# of tokens in 'date':",len(self.index['date']))
+            print("# of tokens in 'keywords':",len(self.index['keywords']))
+            print("# of tokens in 'article':",len(self.index['article']))
+            print("# of toknes in 'summary':",len(self.index['summary']))
+        #TODO: RELLENAR ESTO CUANDO ESTÉ EL PERMUTERM
+        if self.permuterm:
+            print("-"*40)
+            print("PERMUTERMS:")
+            if self.multifield:
+                print("# of permuterms in 'title':")
+                print("# of permuterms in 'date:")
+                print("# of permuterms in 'keywords:'")
+                print("# of permuterms in 'article:'")
+                print("# of permuterms in 'sumary':")
+            else:
+                print("# of permuterms in 'article'")
+        if self.use_stemming:
+            print("-"*40)
+            print("STEMS:")
+            if self.multifield:
+                print("# of stems in 'title':",len(self.sindex['title']))
+                print("# of stems in 'date':",len(self.sindex['date']))
+                print("# of stems in 'keywords':",len(self.sindex['keywords']))
+                print("# of stems in 'article':",len(self.sindex['article']))
+                print("# of stems in 'summary':",len(self.sindex['summary']))
+            else:
+                print("# of stems in 'article':", len(self.sindex))
+        if self.positional:
+            print("-"*40)
+            print("Positional queries are  allowed")
+        else:
+            print("-"*40)
+            print("Positional queries are NOT allowed")
         print("="*40)
-
+        
     ###################################
     ###                             ###
     ###   PARTE 2.1: RECUPERACION   ###
@@ -404,7 +494,7 @@ class SAR_Project:
         Devuelve la posting list asociada al stem de un termino.
 
         param:  "term": termino para recuperar la posting list de su stem.
-                "field": campo sobre el que se debe recuperar la posting list, solo necesario se se hace la ampliacion de multiples indices
+                "field": campo sobre el que se debe recuperar la posting list, solo necesario si se hace la ampliacion de multiples indices
 
         return: posting list
 

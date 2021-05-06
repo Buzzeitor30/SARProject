@@ -28,3 +28,20 @@ cultura	66
 google OR cultura	76
 años AND google	7
 años AND cultura	43
+
+#
+# MULTICAMPO
+#
+cultura	66
+cultura AND date:2015-01-21	1
+cultura AND NOT date:2015-01-21	65
+móvil	33
+keywords:nervioso	1
+móvil AND keywords:nervioso	1
+economía	47
+keywords:precio	0
+economía OR keywords:precio	47
+guerra	93
+keywords:eeuu	2
+guerra AND keywords:eeuu	1
+guerra OR keywords:eeuu	94
