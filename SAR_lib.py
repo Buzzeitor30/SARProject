@@ -196,36 +196,21 @@ class SAR_Project:
             #Noticia en formato de dict.
             new = jlist[i]
             if self.multifield:
-                self.process_field(new)
+                self.process_field(new,fields=self.fields)
             else:
-                self.process(new)
+                self.process_field(new)
 
 
-
-    def process(self,new):
-        """
-        Dado una noticia, se encarga de añadir los términos al diccionario, para la versión no multifield
-        param:
-        -new: es la noticia en cuestión que pasamos como diccionario
-        """
-        #Tokenizamos el article
-        content = self.tokenize(new['article'])
-        for term in content: #recorremos los términos del contenido
-                #Si el término no se encuentra en el diccionario, creamos la posting list para dicho campo
-                if term not in self.index:
-                    self.index[term] = [len(self.news)]
-                #Si la ultima noticia añadida es diferente a la actual, añadimos
-                elif self.index[term][-1] != len(self.news):
-                    self.index[term].append(len(self.news))
-
-    def process_field(self,new):
+    def process_field(self,new,fields=[('article',True)]):
         """
         Dado una noticia, se encarga de añadir los términos a sus correspondientes campos, para la versión multifield
         param:
-        -new: es la noticia en cuestión que pasamos como diccionario
+        -new:es la noticia en cuestión que pasamos como diccionario
+        -fields:campos en los que vamos a escribir, útil para la versión mutifield, valor por defecto ('article',True)
+                para la versión básica del proyecto
         """
         #Recorremos los campos que tienen tuplas (campo, bool)
-        for f in self.fields:
+        for f in fields:
             if f[1]: content = self.tokenize(new[f[0]]) #Articulo tokenizado y separado por espacios
             else: content = [new[f[0]]] #date no se tokeniza
             for term in content: #recorremos los términos del contenido
@@ -236,6 +221,7 @@ class SAR_Project:
                 #Si la ultima noticia añadida es diferente a la actual, añadimos
                 elif aux[term][-1] != len(self.news):
                     aux[term].append(len(self.news))
+                #Actualizamos el indice
                 self.index[f[0]] = aux
 
     def tokenize(self, text):
@@ -263,13 +249,9 @@ class SAR_Project:
         self.stemmer.stem(token) devuelve el stem del token
 
         """
-        #Depende de si tenemos multifield
-        if self.multifield:
-            self.process_stemming_multifield()
-        #O no tenemos multifield
-        else:
-            self.process_stemming()
-        
+        self.process_stemming_multifield()
+
+
     def process_stemming_multifield(self):
         """
         Hace stemming en cada término de cada field y lo introduce en self.sindex[field]
@@ -288,18 +270,6 @@ class SAR_Project:
                 #Si el término no está en la entrada del field del stem correspondiente
                 elif term not in self.sindex[k][stem]:
                     self.sindex[k][stem].append(term)
-    
-    def process_stemming(self):
-        """
-        Hace stemming en cada término, version sin multifield
-        """
-        for term in self.index:
-            #Sacamos el stem
-            stem = self.stemmer.stem(term)
-            if stem not in self.sindex:
-                self.sindex[stem] = [term]
-            elif term not in self.sindex[stem]:
-                self.sindex[stem].append(term)
     
     def make_permuterm(self):
         """
@@ -328,37 +298,33 @@ class SAR_Project:
         print("Number of indexed days: ",len(self.docs))
         print("-"*40)
         print("Number of indexed news ",len(self.news))
+        print("-"*40)
+        print("TOKENS:")
+        print("# of tokens in 'article':",len(self.index['article']))
         if self.multifield:
-            print("-"*40)
-            print("TOKENS:")
             print("# of tokens in 'title':",len(self.index['title']))
             print("# of tokens in 'date':",len(self.index['date']))
             print("# of tokens in 'keywords':",len(self.index['keywords']))
-            print("# of tokens in 'article':",len(self.index['article']))
             print("# of toknes in 'summary':",len(self.index['summary']))
         #TODO: RELLENAR ESTO CUANDO ESTÉ EL PERMUTERM
         if self.permuterm:
             print("-"*40)
             print("PERMUTERMS:")
+            print("# of permuterms in 'article:'")
             if self.multifield:
                 print("# of permuterms in 'title':")
                 print("# of permuterms in 'date:")
                 print("# of permuterms in 'keywords:'")
-                print("# of permuterms in 'article:'")
                 print("# of permuterms in 'sumary':")
-            else:
-                print("# of permuterms in 'article'")
         if self.use_stemming:
             print("-"*40)
             print("STEMS:")
+            print("# of stems in 'article':",len(self.sindex['article']))
             if self.multifield:
                 print("# of stems in 'title':",len(self.sindex['title']))
                 print("# of stems in 'date':",len(self.sindex['date']))
                 print("# of stems in 'keywords':",len(self.sindex['keywords']))
-                print("# of stems in 'article':",len(self.sindex['article']))
                 print("# of stems in 'summary':",len(self.sindex['summary']))
-            else:
-                print("# of stems in 'article':", len(self.sindex))
         if self.positional:
             print("-"*40)
             print("Positional queries are  allowed")
