@@ -473,27 +473,17 @@ class SAR_Project:
         """
         #Sacamos el stem del término
         stem = self.stemmer.stem(term)
-        #Si tenemos multifield activado, le asignamos del campo correspondiente
-        #en otro caso le asignamos la entrada del sindex
-        aux = self.sindex[field].get(stem,[]) if self.multifield else self.sindex.get(stem,[])
-
-        #Si tenemos multifield activado, le asignamos del campo correspondiente
-        # en ontro caso le asignamos la entrada del index
-        aux2 = self.index[field] if self.multifield else self.index
-
+        aux = self.sindex[field].get(stem,[])
         #Si aux está vacía, devolvemos la lista vacía que está en aux
         if len(aux) == 0:
             return aux
-        #Si aux tiene un solo término, devolvemos la lista posicional correspondiente
-        elif len(aux) == 1:
-            #No hace falta comprobar si el término está o no en aux2, si esta en sindex => está en index
-            return aux2[aux[0]]
         #Asignamos a res la lista del primer término 
-        res = aux2[aux[0]]
+        res = self.index[field][aux[0]]
         #Recorremos la lista y vamos aplicando la operación OR
         for i in range(1,len(aux)):
             #Posting list del siguiente término
-            var = aux2[aux[i]]
+            var = self.index[field][aux[i]]
+            #OR_posting
             res = self.or_posting(res,var)
         #Devolvemos el resultado
         return res
