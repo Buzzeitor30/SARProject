@@ -432,13 +432,9 @@ class SAR_Project:
         #La opción de activar el stemming está activa:
         if self.stemming:
             plist = self.get_stemming(term,field) #Devolvemos la posting list del término dentro del campo
-        #Solo la opción del multifield está activada
-        elif self.multifield:
+        else:
             flist = self.index.get(field,{}) #Sacamos el diccionario de campo 'field'
             plist = flist.get(term,[]) #Devolvemos la posting list del término dentro del campo
-        #No hay ninguna funcionalidad extra añadida ;)
-        else: 
-            plist = self.index.get(term,[])
         return plist
 
 
