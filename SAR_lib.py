@@ -430,7 +430,7 @@ class SAR_Project:
 
         """
         #La opción de activar el stemming está activa:
-        if self.stemming:
+        if self.use_stemming:
             plist = self.get_stemming(term,field) #Devolvemos la posting list del término dentro del campo
         else:
             flist = self.index.get(field,{}) #Sacamos el diccionario de campo 'field'
@@ -728,8 +728,15 @@ class SAR_Project:
         return:
         El fragmento de texto en cuestión
         """
-        #Encontramos las primeras apariciones de los articulos 
-        indexes = [(x,article.index(x)) for x in terms if x in article]
+        #Variables auxiliares, en terms y article se mantiene el contenido original para que el bucle for funcione
+        terms2 = terms
+        article2 = article
+        #Si usamos stemming aplicamos stemming a los tokens de ambas listas
+        if self.use_stemming:
+            terms2 = list(map(self.stemmer.stem,terms))
+            article2 = list(map(self.stemmer.stem,article))
+        #Encontramos palabra e indices, lo almacenamos en tuplas
+        indexes = [(x,article2.index(x)) for x in terms2 if x in article2]
         #Ordenamos por orden de aparición
         indexes = sorted(indexes,key = lambda tup: tup[1])
         #Snippet resultado
