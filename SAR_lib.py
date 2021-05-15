@@ -299,6 +299,9 @@ class SAR_Project:
         print("-"*40)
         print("Number of indexed news ",len(self.news))
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
+=======
+>>>>>>> Stashed changes
         print("-"*40)
         print("TOKENS:")
         print("# of tokens in 'article':",len(self.index['article']))
@@ -332,6 +335,9 @@ class SAR_Project:
         else:
             print("-"*40)
             print("Positional queries are NOT allowed")
+<<<<<<< Updated upstream
+=======
+>>>>>>> Stashed changes
 =======
 >>>>>>> Stashed changes
         print("="*40)
@@ -501,8 +507,31 @@ class SAR_Project:
         """
 
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
 
 =======
+>>>>>>> Stashed changes
+=======
+        term = term + '$' #Le añadimos al término $ como símbolo de final
+        com1 = False #com1 = *
+        com2 = False #com2 = ?
+
+        #Recorremos el termino
+        for i in range(len(term)):
+            #buscamos que comodín incluye
+            if term[i] == '*':
+                com1 = True
+                break
+            elif term[i] == '?':
+                com2 = True
+                break
+            t = term[i:] + term[:i] #vamos rotando la palabra
+
+        # h*la -> la$h*
+        self.ptindex.values()
+
+
+
 >>>>>>> Stashed changes
         ##################################################
         ## COMPLETAR PARA FUNCIONALIDAD EXTRA PERMUTERM ##
