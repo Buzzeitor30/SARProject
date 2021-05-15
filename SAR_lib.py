@@ -152,7 +152,8 @@ class SAR_Project:
         ##########################################
         ## COMPLETAR PARA FUNCIONALIDADES EXTRA ##
         ##########################################
-        
+        if self.permuterm:
+            self.make_permuterm()        
 
     def index_file(self, filename):
         """
@@ -252,12 +253,22 @@ class SAR_Project:
         Crea el indice permuterm (self.ptindex) para los terminos de todos los indices.
 
         """
-        pass
         ####################################################
         ## COMPLETAR PARA FUNCIONALIDAD EXTRA DE STEMMING ##
         ####################################################
+        print('Entramos en permuterm')
 
-
+        #Obtenemos clave y valor
+        for k, v in self.index.items():
+            #Recorremos los valores
+            for term in v:
+                term = term + '$'
+                #Hacemos las rotaciones:
+                l = []
+                for i in range(len(term)):
+                    l.append(term[i:] + term[:i])
+                self.ptindex[term] = l
+        
 
 
     def show_stats(self):
@@ -272,6 +283,42 @@ class SAR_Project:
         print("Number of indexed days: ",len(self.docs))
         print("-"*40)
         print("Number of indexed news ",len(self.news))
+<<<<<<< Updated upstream
+=======
+        print("-"*40)
+        print("TOKENS:")
+        print("# of tokens in 'article':",len(self.index['article']))
+        if self.multifield:
+            print("# of tokens in 'title':",len(self.index['title']))
+            print("# of tokens in 'date':",len(self.index['date']))
+            print("# of tokens in 'keywords':",len(self.index['keywords']))
+            print("# of toknes in 'summary':",len(self.index['summary']))
+        #TODO: RELLENAR ESTO CUANDO ESTÉ EL PERMUTERM
+        if self.permuterm:
+            print("-"*40)
+            print("PERMUTERMS:")
+            print("# of permuterms in 'article':")
+            if self.multifield:
+                print("# of permuterms in 'title':")
+                print("# of permuterms in 'date:")
+                print("# of permuterms in 'keywords:'")
+                print("# of permuterms in 'sumary':")
+        if self.use_stemming:
+            print("-"*40)
+            print("STEMS:")
+            print("# of stems in 'article':",len(self.sindex['article']))
+            if self.multifield:
+                print("# of stems in 'title':",len(self.sindex['title']))
+                print("# of stems in 'date':",len(self.sindex['date']))
+                print("# of stems in 'keywords':",len(self.sindex['keywords']))
+                print("# of stems in 'summary':",len(self.sindex['summary']))
+        if self.positional:
+            print("-"*40)
+            print("Positional queries are  allowed")
+        else:
+            print("-"*40)
+            print("Positional queries are NOT allowed")
+>>>>>>> Stashed changes
         print("="*40)
 
     ###################################
@@ -427,6 +474,29 @@ class SAR_Project:
 
         """
 
+<<<<<<< Updated upstream
+=======
+        term = term + '$' #Le añadimos al término $ como símbolo de final
+        com1 = False #com1 = *
+        com2 = False #com2 = ?
+
+        #Recorremos el termino
+        for i in range(len(term)):
+            #buscamos que comodín incluye
+            if term[i] == '*':
+                com1 = True
+                break
+            elif term[i] == '?':
+                com2 = True
+                break
+            t = term[i:] + term[:i] #vamos rotando la palabra
+
+        # h*la -> la$h*
+        self.ptindex.values()
+
+
+
+>>>>>>> Stashed changes
         ##################################################
         ## COMPLETAR PARA FUNCIONALIDAD EXTRA PERMUTERM ##
         ##################################################
