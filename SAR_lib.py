@@ -298,10 +298,6 @@ class SAR_Project:
         print("Number of indexed days: ",len(self.docs))
         print("-"*40)
         print("Number of indexed news ",len(self.news))
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-=======
->>>>>>> Stashed changes
         print("-"*40)
         print("TOKENS:")
         print("# of tokens in 'article':",len(self.index['article']))
@@ -335,11 +331,6 @@ class SAR_Project:
         else:
             print("-"*40)
             print("Positional queries are NOT allowed")
-<<<<<<< Updated upstream
-=======
->>>>>>> Stashed changes
-=======
->>>>>>> Stashed changes
         print("="*40)
         
     ###################################
@@ -506,12 +497,7 @@ class SAR_Project:
 
         """
 
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
 
-=======
->>>>>>> Stashed changes
-=======
         term = term + '$' #Le añadimos al término $ como símbolo de final
         com1 = False #com1 = *
         com2 = False #com2 = ?
@@ -532,7 +518,6 @@ class SAR_Project:
 
 
 
->>>>>>> Stashed changes
         ##################################################
         ## COMPLETAR PARA FUNCIONALIDAD EXTRA PERMUTERM ##
         ##################################################
