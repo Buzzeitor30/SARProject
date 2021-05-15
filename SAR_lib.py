@@ -771,7 +771,7 @@ class SAR_Project:
             #Añadimos a resultado
             snippet += aux
         #El último snippet si no esta en la misma frase que con el penúltimo, repetimos
-        if not seen:
+        if not seen and indexes != []:
             #Es el ultimo
             aux = indexes[-1]
             #Añadimos
