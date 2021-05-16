@@ -358,58 +358,98 @@ class SAR_Project:
         
         if query is None or len(query) == 0:
             return []
-        ########################################
-        ## COMPLETAR PARA TODAS LAS VERSIONES ##
-        ########################################
-        #Le damos la vuelta porque vamos a tratar la lista como una pila
-        newquery = re.split(' ', query)[::-1]
+
+
+        #Obtenemos término y operando
+        newquery = re.split(' ', query)
+
         #Pila donde almacenamos los operandos que vamos viendo
         pila = []
+
+        #Contador para saber si hemos encontrador paréntesis
+        parentesis = 0
+        #Creamos una pila para almacenar la subconsulta si es necesario de cara a los paréntesis
+        pilap = []
         #Hay que hacer todos los términos de la consulta
         while newquery != []:
-            #Obtenemos el contenido, se encuentra en lo alto de la peli
-            var = newquery.pop()
-            #Hemos encontrado un término
-            if var not in ['AND','OR','NOT']:
-                #Si no hemos visto ningún operando => primer término
-                if pila == []:
-                    if ':' in var: #comprobamos si es de un campo específico
-                        j = var.rfind(':') #obtenemos la posición de :
-                        campo = var[:j] #separamos el campo
-                        termino = var[j+1:] #separamos el término
-                        first = self.get_posting(termino, campo)
+            #Hemos encontrado previamente un paréntesis
+            if parentesis:
+                while parentesis > 0:
+                    var = newquery.pop(0)
+                    #Se abre otra subconsulta dentro de la subconsulta, la función recursiva
+                    #lo resuelve
+                    if '(' in var:
+                        parentesis += 1
+                    #Se cierra subconsulta
+                    elif ')' in var:
+                        parentesis -= 1
+                    #Metemos el token de la consulta
+                    pilap.append(var)
+            #Existe un subconsulta
+                if pilap != []:
+                    #Quitamos el paréntesis inicial
+                    pilap[0] = pilap[0][1:]
+                    #Quitamos el paréntesis del final
+                    pilap[-1] =  pilap[-1][:-1]
+                    #Almacenamos el resultado de la subconsulta
+                    aux = self.solve_query(' '.join(pilap))
 
-                    else: first = self.get_posting(var)
-                #Hemos encontrado operandos previamente
-                else:
-                    if ':' in var: #comprobamos si es de un campo específico
-                        j = var.rfind(':') #obtenemos la posición de :
-                        campo = var[:j] #separamos el campo
-                        termino = var[j+1:] #separamos el término
-                        second = self.get_posting(termino, campo)
-
-                    else: second = self.get_posting(var)
-
-                    #Vamos haciendo operaciones
-                    while pila != []:
-                        #¿Cual es el ultimo operando?
-                        op = pila.pop()
-                        #Es un NOT, reverse a la segunda posting list
-                        if op == 'NOT':
-                            second = self.reverse_posting(second)
-                        #Es  un AND, hacemos and_posting
-                        elif op == 'AND':
-                            second = self.and_posting(first,second)
-                        #Es un OR, hacemos or_posting
-                        else:
-                            second = self.or_posting(first,second)
-                    #Guardamos el resultado para más operaciones OwO
-                    first = second
-            #Se trata de un operando, lo añadimos a la pila
+                    if pila == []:
+                        first = aux
+                    else: 
+                        second = aux
+            #Obtenemos el contenido, pos 0 al estar a la izquierda
             else:
-                pila.append(var)
+                var = newquery.pop(0)
+                #Hemos encontrado un token
+                if var not in ['AND','OR','NOT']:
+                    #El primer carácter del token es un '(', debemos añadir el elemento a la lista
+                    if '(' in var:
+                        #Hemos encontrado un paréntesis
+                        parentesis += 1
+                        #Le pasamos el token a la pìla
+                        if ')' in var:
+                            
+                        pilap.append(var)
+                    else:
+                        #Si no hemos visto ningún operando => primer token
+                        if pila == []:
+                            if ':' in var: #comprobamos si es de un campo específico
+                                j = var.rfind(':') #obtenemos la posición de :
+                                campo = var[:j] #separamos el campo
+                                termino = var[j+1:] #separamos el término
+                                first = self.get_posting(termino, campo)
+
+                            else: first = self.get_posting(var)
+                        #Hemos encontrado operandos previamente
+                        else:
+                            if ':' in var: #comprobamos si es de un campo específico
+                                j = var.rfind(':') #obtenemos la posición de :
+                                campo = var[:j] #separamos el campo
+                                termino = var[j+1:] #separamos el término
+                                second = self.get_posting(termino, campo)
+
+                            else: second = self.get_posting(var)
+
+                            #Vamos haciendo operaciones
+                            while pila != []:
+                                #¿Cual es el ultimo operando?
+                                op = pila.pop()
+                                #Es un NOT, reverse a la segunda posting list
+                                if op == 'NOT':
+                                    second = self.reverse_posting(second)
+                                #Es  un AND, hacemos and_posting
+                                elif op == 'AND':
+                                    second = self.and_posting(first,second)
+                                #Es un OR, hacemos or_posting
+                                else:
+                                    second = self.or_posting(first,second)
+                            #Guardamos el resultado para más operaciones OwO
+                            first = second
+                #Se trata de un operando, lo añadimos a la pila
+                else:
+                    pila.append(var)
         #Devolvemos el resultado
-        #print(first)
         return first
  
     def get_posting(self, term, field='article'):
