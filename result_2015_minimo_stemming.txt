@@ -30,6 +30,23 @@ años AND google	7
 años AND cultura	46
 
 #
+# PARENTESIS
+#
+años AND google OR cultura	75
+años AND (google OR cultura)	51
+(google OR cultura) AND años	51
+años AND NOT (google OR cultura)	402
+años AND (NOT google AND NOT cultura)	402
+NOT (google OR cultura) AND años	402
+(psoe OR pp OR CiU)	107
+(economía OR política)	283
+(psoe OR pp OR CiU) AND (economía OR política)	68
+NOT (psoe OR pp OR CiU) AND (economía OR política)	215
+mujer	84
+mujer AND ((psoe OR pp OR CiU) AND (economía OR política))	8
+mujer AND (NOT (psoe OR pp OR CiU) AND (economía OR política))	30
+
+#
 # MULTICAMPO
 #
 cultura	70
