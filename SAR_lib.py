@@ -396,62 +396,48 @@ class SAR_Project:
         while newquery != []:
             #Sacamos el token de la query
             var = newquery.pop(0)
-            #Contiene un paréntesis
-            if '(' in var:
-                #Añadimos todos los parénetesis que tenga el término a su derecha
-                parentesis += var.count('(')
-                #Apilamos
-                pilap.append(var)
-                #Quizás el término tiene paréntesis a la derecha, por ejemplo ((valencia)), por lo tanto eso es un único término
-                if ')' in var:
-                    parentesis -= var.count(')')
-                #Mientras que no hayamos encontrado la subconsulta entera
-                while parentesis > 0:
-                    #Sacamos el siguiente elemento de la lista
-                    var = newquery.pop(0)
-                    #Se abre otra subconsulta dentro de la subconsulta, la función recursiva
-                    #lo resolverá
-                    if '(' in var:
-                        #Contamos el total que haya
-                        parentesis += var.count('(')
-                    #Se cierra subconsulta
-                    elif ')' in var:
-                        #Contamos cuantos tiene 
-                        parentesis -= var.count(')')
-                    #Metemos el token de la consulta
-                    pilap.append(var)
-                #Quitamos el paréntesis inicial del primer token
-                pilap[0] = pilap[0][1:]
-                #Quitamos el paréntesis del final del segundo token
-                pilap[-1] =  pilap[-1][:-1]
-                #Almacenamos el resultado de la subconsulta y
-                #resolvemos de forma recursiva
-                aux = self.solve_query(' '.join(pilap))
-                #Limpiamos la pila de operaciones de paréntesis
-                pilap = []
-                #No hemos visto operandos previamente
-                if pila == []:
-                    first = aux
-                #Los hemos visto anteriormente, hay que operar
-                else: 
-                    second = aux
-                    while pila != []:
-                        #¿Cual es el ultimo operando?
-                        op = pila.pop()
-                        #   Es un NOT, reverse a la segunda posting list
-                        if op == 'NOT':
-                            second = self.reverse_posting(second)
-                        #Es  un AND, hacemos and_posting
-                        elif op == 'AND':
-                            second = self.and_posting(first,second)
-                        #Es un OR, hacemos or_posting
-                        else:
-                            second = self.or_posting(first,second)
-                    first = second
             #Hemos encontrado un token
-            elif var not in ['AND','OR','NOT']:
-                #Si no hemos visto ningún operando => primer token
-                if pila == []:
+            if var not in ['AND','OR','NOT']:
+                if '(' in var:
+                    #Añadimos todos los parénetesis que tenga el término a su derecha
+                    parentesis += var.count('(')
+                    #Apilamos
+                    pilap.append(var)
+                    #Quizás el término tiene paréntesis a la derecha, por ejemplo ((valencia)), por lo tanto eso es un único término
+                    if ')' in var:
+                        parentesis -= var.count(')')
+                    #Mientras que no hayamos encontrado la subconsulta entera
+                    while parentesis > 0:
+                        #Sacamos el siguiente elemento de la lista
+                        var = newquery.pop(0)
+                        #Se abre otra subconsulta dentro de la subconsulta, la función recursiva
+                        #lo resolverá
+                        if '(' in var:
+                            #Contamos el total que haya
+                            parentesis += var.count('(')
+                        #Se cierra subconsulta
+                        elif ')' in var:
+                            #Contamos cuantos tiene 
+                            parentesis -= var.count(')')
+                        #Metemos el token de la consulta
+                        pilap.append(var)
+                    #Quitamos el paréntesis inicial del primer token
+                    pilap[0] = pilap[0][1:]
+                    #Quitamos el paréntesis del final del segundo token
+                    pilap[-1] =  pilap[-1][:-1]
+                    #Almacenamos el resultado de la subconsulta y
+                    #resolvemos de forma recursiva
+                    aux = self.solve_query(' '.join(pilap))
+                    #Limpiamos la pila de operaciones de paréntesis
+                    pilap = []
+                    #No hemos visto operandos previamente
+                    if pila == []:
+                        first = aux
+                    #Los hemos visto anteriormente, hay que operar
+                    else: 
+                        second = aux
+                    #Si no hemos visto ningún operando => primer token
+                elif pila == []:
                     if ':' in var: #comprobamos si es de un campo específico
                         j = var.rfind(':') #obtenemos la posición de :
                         campo = var[:j] #separamos el campo
@@ -459,7 +445,7 @@ class SAR_Project:
                         first = self.get_posting(termino, campo)
 
                     else: first = self.get_posting(var)
-                #Hemos encontrado operandos previamente
+                    #Hemos encontrado operandos previamente
                 else:
                     if ':' in var: #comprobamos si es de un campo específico
                         j = var.rfind(':') #obtenemos la posición de :
@@ -468,7 +454,7 @@ class SAR_Project:
                         second = self.get_posting(termino, campo)
 
                     else: second = self.get_posting(var)
-
+                if pila != []:
                     #Vamos haciendo operaciones
                     while pila != []:
                         #¿Cual es el ultimo operando?
@@ -484,7 +470,7 @@ class SAR_Project:
                             second = self.or_posting(first,second)
                     #Guardamos el resultado para más operaciones OwO
                     first = second
-            #Se trata de un operando, lo añadimos a la pila
+                #Se trata de un operando, lo añadimos a la pila
             else:
                 pila.append(var)
         #Devolvemos el resultado
@@ -576,25 +562,7 @@ class SAR_Project:
         return: posting list
 
         """
-
-        term = term + '$' #Le añadimos al término $ como símbolo de final
-        #Rotaciones del término hasta que el útlimo carácter sea
-        #uno de los indicados
-        while term[-1] != '?' and term[-1] != '*':
-            #Rota término
-            term = term[1:] + term[0]
-        #Devolvemos la posting list de todos los términos cuyo prefijo sea este
-        claves = [t for t in self.ptindex[field].keys() if (term[:-1] == t[:len(term[:-1])])]
-        #La longitud sería la misma ( el ? actúa como un char)
-        if '?' == term[-1]: 
-            #Lista intensional que comprueba si de los permuterms tienen la misma longitud ( el ? es solo un char)
-            claves = [t for t in claves if len(t) == len(term)]
-        pl = []
-        #Sacamos todos los términos de cada clave
-        for k in claves:
-            #Añadimos los términos a una lista
-            pl.extend(self.ptindex[field][k])
-        
+        pl = self.obtener_claves_permu(term)
         if pl == []:
             return pl
         #Asignamos a res la lista del primer término 
@@ -608,6 +576,33 @@ class SAR_Project:
         #Devolvemos el resultado
         return res
 
+    def obtener_claves_permu(self,term,field='article'):
+        """Devuelve la lista de términos asociado a un permuterm
+        param: 
+            -term: el termino en cuestion del que hay que sacar el permuterm
+            -field:campo del diccionario donde se busca,article por default
+        return:
+            -pl: lista que contiene los términos asociados al permuterm
+        """
+        term = term + '$' #Le añadimos al término $ como símbolo de final
+        #Rotaciones del término hasta que el útlimo carácter sea
+        #uno de los indicados
+        while term[-1] != '?' and term[-1] != '*':
+            #Rota término
+            term = term[1:] + term[0]
+        #Devolvemos la posting list de todos los términos cuyo prefijo sea este
+        claves = [t for t in self.ptindex[field].keys() if (term[:-1] == t[:len(term[:-1])])]
+        #La longitud sería la misma ( el ? actúa como un único char)
+        if '?' == term[-1]: 
+            #Lista intensional que comprueba si de los permuterms tienen la misma longitud ( el ? es solo un char)
+            claves = [t for t in claves if len(t) == len(term)]
+        pl = []
+        #Sacamos todos los términos de cada clave
+        for k in claves:
+            #Añadimos los términos a una lista
+            pl.extend(self.ptindex[field][k])
+        return pl
+        
 
     def reverse_posting(self, p):
         """
@@ -792,6 +787,8 @@ class SAR_Project:
         print("Number of results:",number)
         #Asignamos score predeterminada
         score = 0
+        #Está activado show all?
+        number = self.SHOW_MAX if not self.show_all and self.SHOW_MAX < number else number
         #Recorremos cada documento
         for i in range(number):
             #Imprimimos el nº de resultado
@@ -836,15 +833,29 @@ class SAR_Project:
         El fragmento de texto en cuestión
         """
         #Variables auxiliares, en terms y article se mantiene el contenido original para que el bucle for funcione
-        terms2 = terms
-        print(terms2)
+        #Por si es subconsutla,eliminamos paréntesis
+        terms2 = [re.sub(r'\(|\)','',a) for a in terms if ':' not in a]
+        #article original
         article2 = article
-        #Si usamos stemming aplicamos stemming a los tokens de ambas listas
+        #Si usamos stemming aplicamos stemming a los tokens de ambas listas con un map
         if self.use_stemming:
             terms2 = list(map(self.stemmer.stem,terms))
             article2 = list(map(self.stemmer.stem,article))
-        #Encontramos palabra e indices, lo almacenamos en tuplas
+        #Almacenamos la aparición
         indexes = [(x,article2.index(x)) for x in terms2 if x in article2]
+        if self.permuterm:
+            #Sacamos todos los términos de la consulta con wildcard
+            permus = [p for p in terms2 if '*' in p or '?' in p]
+            #variable auxiliar, guarda todos los términos del permuterm
+            aux = []
+            #Vamos añadiendo por cada término con una consulta wildcard los términos que aparece en el permuterm
+            for p in permus:
+                aux.extend(self.obtener_claves_permu(p))
+            #(termino,posicions)
+            aux = [(x,article.index(x)) for x in aux if x in article]
+            indexes.extend(aux)
+            #Elimina términos repetidos
+            indexes = list(dict.fromkeys(indexes))
         #Ordenamos por orden de aparición
         indexes = sorted(indexes,key = lambda tup: tup[1])
         #Snippet resultado
@@ -857,9 +868,14 @@ class SAR_Project:
             first = indexes[i]
             #índice del siguiente término
             last = indexes[i+1]
+            #Comprobamos si estamos al principio del texto
+            j = 3 if first[1] > 3 else 0
+            #Comprobamos si estamos al final del texto
+            z = 3 if first[1] < len(indexes) else len(indexes)
             #Si estan a menos de 10 palabras entre ambos, pillamos la frase hasta ahí
             if last[1] - first[1] < 10:
-                aux = ' '.join(article[first[1]:last[1] + len(last[0])]) + ' '
+                #3 palabras previas si podemos y el resto
+                aux = ' '.join(article[first[1] - j:first[1]])+ ' ' + ' '.join(article[first[1]:last[1] + len(last[0])]) + ' '
                 #Hay dos palabras juntas 
                 seen = True
             #La palabra anterior ya está añadida y no podemos añadir la siguiente
@@ -870,10 +886,6 @@ class SAR_Project:
                 seen = False
             #Simplemente añadimos 3 palabras a la izquierda y tres a la derecha 
             else:
-                #Comprobamos si estamos al principio del texto
-                j = 3 if first[1] > 3 else 0
-                #Comprobamos si estamos al final del texto
-                z = 3 if first[1] < len(indexes) else len(indexes)
                 #snippet+'...'
                 aux = ' '.join(article[first[1] - j: first[1] + z]) + '...'
             #Añadimos a resultado
@@ -883,7 +895,7 @@ class SAR_Project:
             #Es el ultimo
             aux = indexes[-1]
             #Añadimos
-            snippet += ' '.join(article[aux[1]: aux[1] + 3])
+            snippet += ' '.join(article[aux[1] - 3:aux[1]]) + ' ' + ' '.join(article[aux[1]: aux[1] + 3])
         return snippet
         
 
