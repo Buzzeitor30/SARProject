@@ -149,9 +149,12 @@ class SAR_Project:
                 if filename.endswith('.json'):
                     fullname = os.path.join(dir, filename)
                     self.index_file(fullname)
-
+        #Opción de stemming activada
         if self.use_stemming:
             self.make_stemming()
+        #Opción de permuterm activada
+        if self.permuterm:
+            self.make_permuterm()
         ##########################################
         ## COMPLETAR PARA FUNCIONALIDADES EXTRA ##
         ##########################################
@@ -278,12 +281,23 @@ class SAR_Project:
         Crea el indice permuterm (self.ptindex) para los terminos de todos los indices.
 
         """
-        pass
-        ####################################################
-        ## COMPLETAR PARA FUNCIONALIDAD EXTRA DE STEMMING ##
-        ####################################################
-
-
+        for k,v in self.index.items():
+            #Recorremos los valores
+            self.ptindex[k] = {}
+            #Añadimos símbolo del dolar
+            for term in v:
+                aux = term + '$'
+                #Obtenemos todas las rotaciones del término
+                for i in range(len(aux)):
+                    #Obtenemos la permutación
+                    permu = aux[i:] + aux[:i]
+                    #Comprobamos si la permutación está en el diccionario
+                    if permu not in self.ptindex[k]:
+                        #No está, lista
+                        self.ptindex[k][permu] = [term]
+                    else:
+                        #Si está
+                        self.ptindex[k][permu].append(term)    
 
 
     def show_stats(self):
@@ -306,25 +320,30 @@ class SAR_Project:
             print("# of tokens in 'date':",len(self.index['date']))
             print("# of tokens in 'keywords':",len(self.index['keywords']))
             print("# of toknes in 'summary':",len(self.index['summary']))
-        #TODO: RELLENAR ESTO CUANDO ESTÉ EL PERMUTERM
-        if self.permuterm:
-            print("-"*40)
-            print("PERMUTERMS:")
-            print("# of permuterms in 'article:'")
-            if self.multifield:
-                print("# of permuterms in 'title':")
-                print("# of permuterms in 'date:")
-                print("# of permuterms in 'keywords:'")
-                print("# of permuterms in 'sumary':")
-        if self.use_stemming:
-            print("-"*40)
-            print("STEMS:")
-            print("# of stems in 'article':",len(self.sindex['article']))
-            if self.multifield:
+            if self.permuterm:
+                print("-"*40)
+                print("PERMUTERMS:")
+                print("# of permuterms in 'article:'",len(self.ptindex['article']))
+                print("# of permuterms in 'title':",len(self.ptindex['title']))
+                print("# of permuterms in 'date:",len(self.ptindex['date']))
+                print("# of permuterms in 'keywords:'",len(self.ptindex['keywords']))
+                print("# of permuterms in 'summary':",len(self.ptindex['summary']))
+            if self.use_stemming:
+                print("-"*40)
+                print("STEMS:")
+                print("# of stems in 'article':",len(self.sindex['article']))
                 print("# of stems in 'title':",len(self.sindex['title']))
                 print("# of stems in 'date':",len(self.sindex['date']))
                 print("# of stems in 'keywords':",len(self.sindex['keywords']))
                 print("# of stems in 'summary':",len(self.sindex['summary']))
+        if self.permuterm:
+            print("-"*40)
+            print("PERMUTERMS:")
+            print("# of permuterms in 'article:'",len(self.ptindex['article']))
+        if self.use_stemming:
+            print("-"*40)
+            print("STEMS:")
+            print("# of stems in 'article':",len(self.sindex['article']))
         if self.positional:
             print("-"*40)
             print("Positional queries are  allowed")
@@ -489,7 +508,9 @@ class SAR_Project:
 
         """
         #La opción de activar el stemming está activa:
-        if self.use_stemming:
+        if ('*' in term or '?' in term) and self.permuterm:
+            plist = self.get_permuterm(term,field)
+        elif self.use_stemming:
             plist = self.get_stemming(term,field) #Devolvemos la posting list del término dentro del campo
         else:
             flist = self.index.get(field,{}) #Sacamos el diccionario de campo 'field'
@@ -556,30 +577,37 @@ class SAR_Project:
 
         """
 
-
         term = term + '$' #Le añadimos al término $ como símbolo de final
-        com1 = False #com1 = *
-        com2 = False #com2 = ?
+        #Rotaciones del término hasta que el útlimo carácter sea
+        #uno de los indicados
+        while term[-1] != '?' and term[-1] != '*':
+            #Rota término
+            term = term[1:] + term[0]
+        #Devolvemos la posting list de todos los términos cuyo prefijo sea este
+        claves = [t for t in self.ptindex[field].keys() if (term[:-1] == t[:len(term[:-1])])]
+        #La longitud sería la misma ( el ? actúa como un char)
+        if '?' == term[-1]: 
+            #Lista intensional que comprueba si de los permuterms tienen la misma longitud ( el ? es solo un char)
+            claves = [t for t in claves if len(t) == len(term)]
+        pl = []
+        #Sacamos todos los términos de cada clave
+        for k in claves:
+            #Añadimos los términos a una lista
+            pl.extend(self.ptindex[field][k])
+        
+        if pl == []:
+            return pl
+        #Asignamos a res la lista del primer término 
+        res = self.index[field][pl[0]]
+        #Recorremos la lista y vamos aplicando la operación OR
+        for i in range(1,len(pl)):
+            #Posting list del siguiente término
+            var = self.index[field][pl[i]]
+            #OR_posting
+            res = self.or_posting(res,var)
+        #Devolvemos el resultado
+        return res
 
-        #Recorremos el termino
-        for i in range(len(term)):
-            #buscamos que comodín incluye
-            if term[i] == '*':
-                com1 = True
-                break
-            elif term[i] == '?':
-                com2 = True
-                break
-            t = term[i:] + term[:i] #vamos rotando la palabra
-
-        # h*la -> la$h*
-        self.ptindex.values()
-
-
-
-        ##################################################
-        ## COMPLETAR PARA FUNCIONALIDAD EXTRA PERMUTERM ##
-        ##################################################
 
     def reverse_posting(self, p):
         """
@@ -809,6 +837,7 @@ class SAR_Project:
         """
         #Variables auxiliares, en terms y article se mantiene el contenido original para que el bucle for funcione
         terms2 = terms
+        print(terms2)
         article2 = article
         #Si usamos stemming aplicamos stemming a los tokens de ambas listas
         if self.use_stemming:
