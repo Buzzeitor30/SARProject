@@ -155,9 +155,7 @@ class SAR_Project:
         #Opción de permuterm activada
         if self.permuterm:
             self.make_permuterm()
-        ##########################################
-        ## COMPLETAR PARA FUNCIONALIDADES EXTRA ##
-        ##########################################
+
         
 
     def index_file(self, filename):
@@ -307,7 +305,6 @@ class SAR_Project:
         Muestra estadisticas de los indices
         
         """
-        #TODO: Mirar ayuda.pdf para rellenar todo ^^ y dejarlo bonito este print que es muy chapuza
         print("="*40)
         print("Number of indexed days: ",len(self.docs))
         print("-"*40)
@@ -377,11 +374,8 @@ class SAR_Project:
         
         if query is None or len(query) == 0:
             return []
-
-
         #Obtenemos término y operando
         newquery = re.split(' ', query)
-
         #Pila donde almacenamos los operandos que vamos viendo
         pila = []
         #Posting list del primer término
@@ -535,6 +529,7 @@ class SAR_Project:
         """
         #Sacamos el stem del término
         stem = self.stemmer.stem(term)
+        #obtener posting list si existe
         aux = self.sindex[field].get(stem,[])
         #Si aux está vacía, devolvemos la lista vacía que está en aux
         if len(aux) == 0:
@@ -628,7 +623,7 @@ class SAR_Project:
             elif allnews[j] < p[i]:
                 pres.append(allnews[j])
                 j+=1
-            #No se puede dar el caso de que p[i] > allnews[j]
+            #No se puede dar el caso de que p[i] < allnews[j]
         #Si quedan términos sin visitar
         while j < len(allnews):
             pres.append(allnews[j])
@@ -833,7 +828,8 @@ class SAR_Project:
         El fragmento de texto en cuestión
         """
         #Variables auxiliares, en terms y article se mantiene el contenido original para que el bucle for funcione
-        #Por si es subconsutla,eliminamos paréntesis
+        #Por si es subconsulta, eliminamos paréntesis
+        #además no tiene sentido buscar términos que estáne n otros fields
         terms2 = [re.sub(r'\(|\)','',a) for a in terms if ':' not in a]
         #article original
         article2 = article
@@ -874,15 +870,18 @@ class SAR_Project:
             z = 3 if first[1] < len(indexes) else len(indexes)
             #Si estan a menos de 10 palabras entre ambos, pillamos la frase hasta ahí
             if last[1] - first[1] < 10:
-                #3 palabras previas si podemos y el resto
-                aux = ' '.join(article[first[1] - j:first[1]])+ ' ' + ' '.join(article[first[1]:last[1] + len(last[0])]) + ' '
+                #Si hemos visto la de ahora, añadimos a partir de la siguiente palabra respecto a la de ahora
+                if seen:
+                    aux = ' '.join(article[first[1] + len(first[0]) + 1:last[1] + z]) + ' '
+                else:
+                    aux = ' '.join(article[first[1] - j:first[1]])+ ' ' + ' '.join(article[first[1]:last[1] + len(last[0])]) + ' '
                 #Hay dos palabras juntas 
                 seen = True
-            #La palabra anterior ya está añadida y no podemos añadir la siguiente
+            #La palabra de ahora ya está añadida y no podemos añadir la siguiente
             elif seen:
                 #Solo ponemos '...'
                 aux = '...'
-                #No las hay
+                #No he añadido el término posterior
                 seen = False
             #Simplemente añadimos 3 palabras a la izquierda y tres a la derecha 
             else:
@@ -891,6 +890,7 @@ class SAR_Project:
             #Añadimos a resultado
             snippet += aux
         #El último snippet si no esta en la misma frase que con el penúltimo, repetimos
+        print(indexes)
         if not seen and indexes != []:
             #Es el ultimo
             aux = indexes[-1]
