@@ -866,8 +866,7 @@ class SAR_Project:
             last = indexes[i+1]
             #Comprobamos si estamos al principio del texto
             j = 3 if first[1] > 3 else 0
-            #Comprobamos si estamos al final del texto
-            z = 3 if first[1] < len(indexes) else len(indexes)
+            z = 3 
             #Si estan a menos de 10 palabras entre ambos, pillamos la frase hasta ahí
             if last[1] - first[1] < 10:
                 #Si hemos visto la de ahora, añadimos a partir de la siguiente palabra respecto a la de ahora
@@ -894,7 +893,7 @@ class SAR_Project:
         if not seen and indexes != []:
             #Es el ultimo
             aux = indexes[-1]
-            #Añadimos
+            #Añadimos, no pasa nada si nos pasamos del texto por la dereccha python se encarga
             snippet += ' '.join(article[aux[1] - 3:aux[1]]) + ' ' + ' '.join(article[aux[1]: aux[1] + 3])
         return snippet
         
